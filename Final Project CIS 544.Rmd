@@ -1,0 +1,224 @@
+---
+title: "Final Project CIS 544"
+author: "Ana Pacella"
+output: html_notebook
+---
+
+#Installing packages needed
+```{r}
+install.packages("tidyverse")
+install.packages("caTools")
+install.packages("class")
+install.packages("gmodels")
+install.packages("stringr")
+install.packages("tidyverse")
+install.packages("corrplot")
+install.packages("Metrics")
+install.packages("olsrr")
+```
+
+#Loading libraries
+```{r}
+library(tidyverse)
+library(caTools)
+library(class)
+library(gmodels)
+library(stringr)
+library(tidyverse)
+library(corrplot)
+library(Metrics)
+library(olsrr)
+```
+
+#Importing the data that we will be analyzing and getting a summary with glimpse
+```{r}
+imdb <- read.csv("imdb_top_1000_1.csv", stringsAsFactors = T)
+glimpse(imdb)
+```
+
+#Exploring the data - we want to get to know a sense of the data by getting its summary, head, and viewing it on a table.
+#Also, we are plotting two relevant variables from the data to see if they have any relation.
+```{r}
+summary(imdb$Meta_score)
+head(imdb)
+view(imdb)
+plot(imdb$Meta_score,imdb$No_of_Votes)
+
+#After plotting the data, we could tell that there is a somewhat positive correlation, meaning that the more number of votes or more popular the movie is, the highest score it got.
+```
+
+#Here we will create a new column to classify the rating of the movies as Low, Mid and High 
+```{r}
+#ifelse(TEST, if TRUE, if FALSE)
+imdb$rating <- as.factor(
+  ifelse(imdb$Meta_score <= 50,"Low",
+         ifelse(imdb$Meta_score <= 80, "Mid","High")))
+
+summary(imdb$rating)
+```
+
+#Now we will proceed to split the data
+```{r}
+set.seed(123)
+sample <- sample.split(imdb$Meta_score, SplitRatio = .75)
+train <- subset(imdb, sample == TRUE)
+test <- subset(imdb, sample == FALSE)
+```
+
+#Here we will visualize the data to get a better understanding
+```{r}
+ggplot(imdb, aes(rating)) + geom_bar(aes(fill=rating)) + labs(title = "Rating  Classification Comparison", x = "Rating Classification", y = "Count of Rating CLassification")
+
+#We can see that most of the movies are classified with Mid rating, followed by High rating and finally very few with Low rating.
+```
+
+```{r}
+ggplot(imdb, aes(IMDB_Rating)) + geom_bar(aes(fill=IMDB_Rating)) + labs(title = "IMDB Rating Column Comparison", x = "IMDB Rating", y = "Number of IMDB Rating")
+
+#In the graph we can see a comparison between the IMDB Rating column with how many movies had a specific Rating, or in other words, how repetitive the ratings were. We see that not that many movies were given a rating of 9-10, but a lot of them were given a rating between 7.5-8. 
+```
+
+#We now want to proceed to calculate KNN, or K-nearest neighbor, so we have to select two numeric predictors first.
+#I selected the columns Gross and No_of_Votes for the first predictors
+```{r}
+#only uses two predictors because it makes like a plot, x and y
+Gross.No_of_Votes.train <- select(train,Gross,No_of_Votes)
+Gross.No_of_Votes.test <- select(test,Gross,No_of_Votes)
+```
+#We now proceed to do KNN, because we already have our data split and already have a class (rating)
+```{r}
+predicted.Gross.No_of_Votes <- knn(train = Gross.No_of_Votes.train,
+                                 test = Gross.No_of_Votes.test,
+                                 cl =train$rating,
+                                 k = 3)
+
+predicted.Gross.No_of_Votes
+```
+
+#Confusion Matrix
+```{r}
+Gross.No_of_Votes.confusion <- table(predicted.Gross.No_of_Votes,test$rating)
+Gross.No_of_Votes.confusion
+```
+
+#We proceed to perform Accurace for our model - we want to know how accurate it is
+```{r}
+#Accuracy formula for confusion matrix
+accuracyimdb <- sum(diag(Gross.No_of_Votes.confusion)) / sum(Gross.No_of_Votes.confusion)
+cat("IMDB Confusion Accuracy is:",accuracyimdb)
+
+#After performing the accuracy formula, we can see that the model is not that accurate - only 47% of accuracy.
+```
+
+
+#Since the accuracy for the previous KNN was not high, now we'll repeat all previous steps for KNN, but this time we'll try with Released Year and Run Time Min
+```{r}
+Released_Year.Runtime..min..train <- select(train,Released_Year,Runtime..min.)
+Released_Year.Runtime..min..test <- select(test,Released_Year,Runtime..min.)
+```
+
+```{r}
+predicted.Released_Year.Runtime..min. <- knn(train = Released_Year.Runtime..min..train,
+                                 test = Released_Year.Runtime..min..test,
+                                 cl =train$rating,
+                                 k = 3)
+predicted.Released_Year.Runtime..min.
+```
+
+```{r}
+Released_Year.Runtime..min..confusion <- table(predicted.Released_Year.Runtime..min.,test$rating)
+Released_Year.Runtime..min..confusion
+```
+
+```{r}
+accuracyimdb1 <- sum(diag(Released_Year.Runtime..min..confusion)) / sum(Released_Year.Runtime..min..confusion)
+cat("IMDB Confusion Accuracy is:",accuracyimdb1)
+
+#After performing the accuracy formula once again, we can see that the model has a bit more accuracy than the previous one, but is still not that accurate - only 59% of accuracy.
+```
+
+#Since the accuracy for the previous 2 KNN was not high, now we'll repeat all previous steps for KNN, but this time we'll try with IMDB_Rating and No_of_Votes
+```{r}
+IMDB_Rating.No_of_Votes.train <- select(train,IMDB_Rating,No_of_Votes)
+IMDB_Rating.No_of_Votes.test <- select(test,IMDB_Rating,No_of_Votes)
+```
+
+```{r}
+predicted.IMDB_Rating.No_of_Votes <- knn(train = IMDB_Rating.No_of_Votes.train,
+                                 test = IMDB_Rating.No_of_Votes.test,
+                                 cl =train$rating,
+                                 k = 3)
+predicted.IMDB_Rating.No_of_Votes
+```
+
+```{r}
+IMDB_Rating.No_of_Votes.confusion <- table(predicted.IMDB_Rating.No_of_Votes,test$rating)
+IMDB_Rating.No_of_Votes.confusion
+```
+
+```{r}
+accuracyimdb2 <- sum(diag(IMDB_Rating.No_of_Votes.confusion)) / sum(IMDB_Rating.No_of_Votes.confusion)
+cat("IMDB Confusion Accuracy is:",accuracyimdb2)
+```
+
+#The accuracy for this KNN is still not high. Only 51%. Now we will proceed to visualize the findings.
+
+```{r}
+ggplot(data = imdb, mapping = aes(x = Gross, y = No_of_Votes, color = rating)) + geom_point() + labs(title = "Number of Votes Vs. Gross Revenue", x = "Gross Revenue", y = "Number of Votes")
+```
+#From the graph above, we could say that there is a positive relation between the number of votes a movie got (popularity) and its gross revenue.
+
+```{r}
+ggplot(data = imdb, mapping = aes(x = Released_Year, y = Runtime..min., color = rating)) + geom_point() + labs(title = "Movie Duration Vs. Year Released", x = "Year Released", y = "Movie Duration (min)")
+```
+#From the graph below, I would say there is not really any relation between the duration of a movie, the year released, or its rating class.
+
+```{r}
+ggplot(data = imdb, mapping = aes(x = IMDB_Rating, y = No_of_Votes, color = rating)) + geom_point() + labs(title = "Number of Votes Vs. IMDB Movie Rating", x = "IMDB Movie Rating", y = "Number of Votes")
+```
+
+#We could say there is a positive correlation between the Number of Votes a movie got and its IMDB Movie Rating as well as for its rating class.
+
+#Since we have performed a model (KNN) we will now proceed to perform a second model (Stepwise regression) - for that, we will start with a linear model
+
+```{r}
+#Multivariate Linear Regression
+#it's as regression with multiple variables
+
+lmModel <- lm(Meta_score ~ IMDB_Rating + No_of_Votes + Gross + Runtime..min. + Released_Year, data = train)
+lmPrediction <- predict(lmModel, test)
+cat("Linear Regression RMSE:", rmse(lmPrediction,test$Meta_score))
+```
+#We can see that the RMSE is high: 10.8217
+
+#Now we proceed to get the stepwise forward model details
+
+```{r}
+stepwiseModel <- ols_step_forward_p(lmModel, details = TRUE)
+stepwiseModel
+```
+
+#Now we proceed to get the stepwise backward model details
+
+```{r}
+stepwiseModel<- ols_step_backward_p(lmModel, details = TRUE)
+stepwiseModel
+```
+
+#Now we proceed to get each error metrics for each stepwise model
+
+```{r}
+stepwiseModel <- ols_step_forward_p(lmModel, details = FALSE)
+stepwisePrediction <- predict(stepwiseModel$model,test)
+cat("Stepwise Foward RMSE:", rmse(stepwisePrediction,test$Meta_score), "\n")
+
+stepwiseModel <- ols_step_backward_p(lmModel, details = FALSE)
+stepwisePrediction <- predict(stepwiseModel$model,test)
+cat("Stepwise Backward RMSE:", rmse(stepwisePrediction,test$Meta_score), "\n")
+
+stepwiseModel <- ols_step_both_p(lmModel, details = FALSE)
+stepwisePrediction <- predict(stepwiseModel$model,test)
+cat("Stepwise Both RMSE:", rmse(stepwisePrediction,test$Meta_score), "\n")
+```
+
+#We can see that all errors are similar and are high.
