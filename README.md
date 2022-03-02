@@ -8,7 +8,7 @@ It has always been amongst my interests the acting world – because of this rea
 
 The data was extracted from Kaggle, so it is publicly available here. I chose the “IMDB Movie Dataset”, which has a bit less than 1000 rows of content and 16 variables. I did not use all of them – only the ones that were classified as integers or doubles, such as: IMDB Rating, Meta Score (score that was earned by the movie), Number of Votes, Gross (total revenue), Released Year and Run Time Min (duration of movie in minutes). Variables that were not considered for this study were the ones classified as factors, such as: Movie Title, Genre, Director, Stars, Classification, amongst others. 
 
-###Procedure 
+### Procedure 
 
 Since we want to classify a movie from its revenue and ratings, we start by classifying the data by “Low”, “Mid” and “High” – we’ll be using the Meta_Score variable, which is the overall rating that was given to each movie. I have classified them as the following: Low<=50, Mid<=70 and High all the rest.
 
